@@ -1,10 +1,12 @@
-Pipeline klasyfikacji wine
+\# IUM pipeline ML z CI
 
 
 
 !\[CI](https://github.com/irintinuviel/ium-lab05/actions/workflows/ci.yml/badge.svg)
 
 
+
+Pipeline klasyfikacji win
 
 ## Etapy
 
