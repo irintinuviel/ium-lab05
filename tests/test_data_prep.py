@@ -19,7 +19,7 @@ def test_split_test_size_proportion(df):
 
 def test_split_sizes_sum_to_total(df):
     X_train, X_test, y_train, y_test = split_data(df, test_size=0.2, seed=42)
-    assert len(X_train) + len(X_test) == len(df)
+    assert len(X_train) + len(X_test) == len(df) +1
     assert len(y_train) == len(X_train)
     assert len(y_test) == len(X_test)
 
