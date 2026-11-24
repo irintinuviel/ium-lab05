@@ -6,18 +6,33 @@
 
 
 
-Pipeline klasyfikacji win
+Pipeline klasyfikacji win  
 
-## Etapy
 
-1. przygotowanie danych
-2. trening modelu
-3. ewaluacja i zapis metryk
 
-## Uruchomienie
+
+
+\## Etapy
+
+
+
+1\. `src/data\_prep.py` - przygotowanie danych
+
+2\. `src/train.py` - trening modelu
+
+3\. `src/evaluate.py` - ewaluacja i zapis metryk
+
+
+
+\## Uruchomienie
+
+
 
 ```bash
+
 docker compose up --build      # panel z wynikami na http://localhost:8080
-pytest -v                      
+
+pytest -v                     
+
 ```
 
