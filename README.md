@@ -1,38 +1,18 @@
-\# IUM pipeline ML z CI
+# IUM pipeline ML z CI
 
+![CI](https://github.com/irintinuviel/ium-lab05/actions/workflows/ci.yml/badge.svg)
 
+Pipeline klasyfikacji win
 
-!\[CI](https://github.com/irintinuviel/ium-lab05/actions/workflows/ci.yml/badge.svg)
+## Etapy
 
+1. `src/data_prep.py` - przygotowanie danych
+2. `src/train.py` - trening modelu
+3. `src/evaluate.py` - ewaluacja i zapis metryk
 
-
-Pipeline klasyfikacji win  
-
-
-
-
-
-\## Etapy
-
-
-
-1\. `src/data\_prep.py` - przygotowanie danych
-
-2\. `src/train.py` - trening modelu
-
-3\. `src/evaluate.py` - ewaluacja i zapis metryk
-
-
-
-\## Uruchomienie
-
-
+## Uruchomienie
 
 ```bash
-
 docker compose up --build      # panel z wynikami na http://localhost:8080
-
-pytest -v                     
-
+pytest -v                      
 ```
-
