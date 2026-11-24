@@ -1,6 +1,10 @@
+Pipeline klasyfikacji wine
+
+
+
 !\[CI](https://github.com/irintinuviel/ium-lab05/actions/workflows/ci.yml/badge.svg)
 
-Pipeline klasyfikacji wine 
+
 
 ## Etapy
 
