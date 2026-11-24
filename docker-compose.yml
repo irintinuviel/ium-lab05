@@ -1,0 +1,30 @@
+# ZADANIA 4-6: trening + usługa visualize
+services:
+  train:
+    build: .
+    image: ium-train:1.0
+    container_name: ium-train
+    env_file: .env.train
+    environment:
+      - STATUS_PORT=5000            # po treningu kontener udostępnia /status
+    command: ["python", "src/run_pipeline.py"]
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./results:/app/results
+    mem_limit: 512m                 # maksymalna pamięć kontenera
+    cpus: 1.0                       # maksymalnie 1 rdzeń procesora
+    # brak sekcji ports: /status jest dostępny tylko w sieci compose
+
+  visualize:
+    build: ./visualize              # osobny obraz z katalogu visualize/
+    image: ium-visualize:1.0
+    container_name: ium-visualize
+    environment:
+      - TRAIN_URL=http://train:5000/status   # usługa train adresowana po nazwie
+    ports:
+      - "8080:8080"                 # panel dostępny z przeglądarki hosta
+    volumes:
+      - ./results:/results:ro       # wyniki tylko do odczytu
+    depends_on:
+      - train                       # start dopiero po starcie kontenera train

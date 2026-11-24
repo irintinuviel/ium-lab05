@@ -1,0 +1,115 @@
+name: CI
+
+# wyzwalacze: każdy push do main i każdy pull request
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# GITHUB_TOKEN: odczyt kodu + zapis/odczyt obrazów w GitHub Container Registry
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # ---------------------------------------------------------------
+  # JOB 1: budowa obrazu Docker z lab. 5 i publikacja w ghcr.io
+  # ---------------------------------------------------------------
+  build-image:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.name.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # nazwa obrazu w rejestrze musi być pisana małymi literami
+      - name: Nazwa obrazu
+        id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/ium-train:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      # CACHE: warstwy obrazu z zainstalowanymi zależnościami z requirements.txt
+      - name: Cache zależności (warstwy Dockera)
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: deps-${{ hashFiles('requirements.txt') }}
+          restore-keys: deps-
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Logowanie do GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Budowa i publikacja obrazu
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.name.outputs.image }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      # podmiana cache (zapobiega rozrastaniu się katalogu w nieskończoność)
+      - name: Aktualizacja cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  # ---------------------------------------------------------------
+  # JOB 2: testy i trening WEWNĄTRZ obrazu z joba 1
+  # ---------------------------------------------------------------
+  test-and-train:
+    needs: build-image                 # start dopiero po zbudowaniu obrazu
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build-image.outputs.image }}
+      credentials:                     # obraz w ghcr.io jest prywatny
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    # zwykła konfiguracja - jawna, wersjonowana razem z kodem
+    env:
+      DATA_PATH: data/wine.csv
+      TARGET_COLUMN: target
+      TEST_SIZE: "0.2"
+      RANDOM_SEED: "42"
+      MODEL_TYPE: logistic_regression
+      MAX_ITER: "1000"
+      C: "1.0"
+      N_ESTIMATORS: "100"
+      MODEL_PATH: models/model.pkl
+      RESULTS_PATH: results/wyniki.txt
+      METRICS_PATH: results/metrics.json
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. najtańszy krok najpierw - błąd w testach zatrzymuje cały job
+      - name: Testy jednostkowe (pytest)
+        run: pytest -v
+
+      # 2-4. pipeline z lab. 3/5 - uruchamiany tylko, gdy testy przeszły
+      - name: Przygotowanie danych
+        run: python src/data_prep.py
+
+      - name: Trening modelu
+        run: python src/train.py
+        env:
+          API_KEY: ${{ secrets.API_KEY }}   # sekret z ustawień repozytorium
+
+      - name: Ewaluacja
+        run: python src/evaluate.py
+
+      # 5. ARTEFAKT: model i wyniki do pobrania z zakładki Actions
+      - name: Zapis modelu jako artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: model
+          path: |
+            models/model.pkl
+            results/wyniki.txt
+            results/metrics.json
